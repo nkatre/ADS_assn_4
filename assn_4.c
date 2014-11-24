@@ -53,7 +53,7 @@ int * copyKeys(int const * L, size_t len,int key)
    return K;
 }
 int isFull(btree_node *node){
-	if(node->n <= (order-1))
+	if(node->n < (order-1))
 		return 1;
 	else
 		return 0;
@@ -137,9 +137,9 @@ void endFunction(char *line){
 int filter(char *line){
 	char *command=NULL;
 	command = strtok(line," "); // get command from the line
-	int nodeID = 0;
-	nodeID=atoi(strtok(NULL,"\n"));
-	return nodeID;
+	int key = 0;
+	key=atoi(strtok(NULL,"\n"));
+	return key;
 }
 
 void printNode(btree_node *node){
@@ -147,14 +147,15 @@ void printNode(btree_node *node){
 }
 void addFunction(char *line){
 	printf("%s",line);
-	int nodeID = filter(line);
+	int key = filter(line);
 	if(rootOffset==-1){
 		btree_node *node=NULL;
-		node=addKey(node,nodeID);
+		node=addKey(node,key);
 	}
 	else{
-		if(isFull(rootOffset)){
 
+		if(!isFull(rootOffset)){
+			node=addKey(node,nodeID);
 		}
 	}
 	//printNode(node);
