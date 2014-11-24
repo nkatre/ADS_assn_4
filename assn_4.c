@@ -14,15 +14,17 @@
 
 #pragma pack(1)
 
-int order = 4;
-FILE *indexFP=NULL; // index file pointer
-long rootOffset = -1; // Offset of root node
-
 typedef struct{           /* B tree node */
 	int n;				  /* Number of keys in the node */
 	int *key;             /* Node's keys */
 	long *child;          /* Node's child subtree offsets */
 }btree_node;
+
+// Variable Declaration
+int order = 4;
+FILE *indexFP=NULL; // index file pointer
+long rootOffset = -1; // Offset of root node
+btree_node *rootNode = NULL;  // initialize the rootNode
 
 // Functions  for each operation
 void addFunction(char *line);
@@ -38,9 +40,11 @@ int cmpfunc (const void * a, const void * b);
 
 
 // Operational Functions
+void writeNode(btree_node *node, long offset);
+btree_node* readNode(long offset);
 int * copyKeys(int const * src, size_t len,int key);
 btree_node* addKey(btree_node *node, int key);
-
+btree_node* search();
 
 int ceil(int num, int den){
 	return ((num+den-1)/den);
@@ -53,7 +57,7 @@ int * copyKeys(int const * L, size_t len,int key)
    return K;
 }
 int isFull(btree_node *node){
-	if(node->n < (order-1))
+	if(node->n >= (order))
 		return 1;
 	else
 		return 0;
@@ -64,17 +68,34 @@ int cmpfunc (const void * a, const void * b){
 btree_node* addKey(btree_node *node, int key){
 	if(node==NULL){
 			node = (btree_node *)malloc(sizeof(btree_node));
-			node.n = 0;
-			node.key = (int *)calloc(order-1,sizeof(int));
-			node.child = (long *)calloc(order,sizeof(long));
+			node->n = 0;
+			node->key = (int *)calloc(order-1,sizeof(int));
+			node->child = (long *)calloc(order,sizeof(long));
 		}
 	node->key[node->n]=key;
 	node->n++;
 	qsort(node->key,node->n,sizeof(int),cmpfunc);  // sort the keys if the node
 	return node;
 }
+btree_node* search(){
 
-
+}
+void writeNode(btree_node *node, long offset){
+	rewind(indexFP);
+	fseek(indexFP,offset,SEEK_SET);
+	fwrite(&node->n,sizeof(int),1,indexFP);
+	fwrite(node->key,sizeof(int),order-1,indexFP);
+	fwrite(node->child,sizeof(long),order,indexFP);
+}
+btree_node* readNode(long offset){
+	rewind(indexFP);
+	fseek(indexFP,offset,SEEK_SET);
+	btree_node *node=(btree_node *)malloc(sizeof(btree_node));
+	fread(&node->n,sizeof(int),1,indexFP);
+	fread(node->key,sizeof(int),order-1,indexFP);
+	fread(node->child,sizeof(long),order,indexFP);
+	return node;
+}
 
 
 
@@ -92,6 +113,7 @@ int main(int argc, char *argv[]){
 	else{
 		// get the offset of the root node
 		fread(&rootOffset,sizeof(long),1,indexFP);
+		rootNode = readNode(rootOffset);
 	}
 
 	// get the order of the b-tree
@@ -143,22 +165,15 @@ int filter(char *line){
 }
 
 void printNode(btree_node *node){
-	printf("%i\n",node.n);
+	printf("%i\n",node->n);
 }
 void addFunction(char *line){
 	printf("%s",line);
 	int key = filter(line);
-	if(rootOffset==-1){
-		btree_node *node=NULL;
-		node=addKey(node,key);
+	// TODO: search for the leaf node to enter the key into
+	if(rootOffset==-1 || !isFull(rootNode)){
+		rootNode=addKey(rootNode,key);
 	}
-	else{
-
-		if(!isFull(rootOffset)){
-			node=addKey(node,nodeID);
-		}
-	}
-	//printNode(node);
 
 }
 
